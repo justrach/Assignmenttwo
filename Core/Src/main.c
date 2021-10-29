@@ -192,6 +192,9 @@
 /* USER CODE END Header */
 
 #include "main.h"
+#include "../../Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01_accelero.h"
+#include "../../Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01_tsensor.h"
+#include "stdio.h"
 
 static void MX_GPIO_Init(void);
 extern void initialise_monitor_handles(void);
@@ -221,7 +224,7 @@ HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	if(GPIO_Pin == BUTTON_EXTI13_Pin)
 	{
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
-				printf("\t normal mode operation n progress. \n");
+				printf("\t normal mode operation in progress. \n");
 		if (count ==1){
 			count ++;
 		}
@@ -247,11 +250,11 @@ HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 }
 
-float temperatureMeasure(){
+/*float temperatureMeasure(){
 	BSP_TSENSOR_Init();
 	return BSP_TSENSOR_ReadTemp();
 }
-
+*/
 
 int main(void)
 {
@@ -264,13 +267,13 @@ int main(void)
 	while (1)
 	{
 		if(flag ==0 ){
-			BSP_TSENSOR_Init();
+			//BSP_TSENSOR_Init();
 			float accel_data[3];
 			int16_t accel_data_i16[3] = { 0 };			// array to store the x, y and z readings.
 			BSP_ACCELERO_AccGetXYZ(accel_data_i16);
 			float temp_data;// read temp
 			temp_data = BSP_TSENSOR_ReadTemp();
-			printf("Temperature data is %d\n", temp_data);
+			printf("Temperature data is %f\n", temp_data);
 
 						 // the function above returns 16 bit integers which are 100 * acceleration_in_m/s2. Converting to float to print the actual acceleration.
 			accel_data[0] = (float)accel_data_i16[0] / 100.0f;
