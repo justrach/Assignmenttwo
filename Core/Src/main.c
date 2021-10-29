@@ -292,6 +292,7 @@ static void MX_GPIO_Init(void)
 
 		__HAL_RCC_GPIOB_CLK_ENABLE();	// Enable AHB2 Bus for GPIOB
 		__HAL_RCC_GPIOC_CLK_ENABLE();	// Enable AHB2 Bus for GPIOC
+		__HAL_RCC_GPIOD_CLK_ENABLE();	// Enable Temperature sensor GPIOD
 
 	HAL_GPIO_WritePin(GPIOB, LED2_Pin, GPIO_PIN_RESET); // Reset the LED2_Pin as 0
 
