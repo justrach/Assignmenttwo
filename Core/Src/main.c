@@ -205,9 +205,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 void BSP_HSENSOR_Init();
 void BSP_PSENSOR_Init();
 
-
-
-
 int flag =1;
 int count = 1;
 uint32_t tickstart;
@@ -271,6 +268,10 @@ HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 int main(void)
 {
+
+
+
+
 	initialise_monitor_handles();
 	HAL_Init();
 	MX_GPIO_Init();
@@ -278,6 +279,12 @@ int main(void)
 	BSP_GYRO_Init();
 	BSP_TSENSOR_Init();
 	BSP_MAGNETO_Init();
+
+	//logic flow such that when respiratory sens
+
+
+
+
 	while (1)
 	{
 		if(flag ==0 ){
@@ -370,6 +377,7 @@ static void MX_GPIO_Init(void)
 
 	// Enable NVIC EXTI line 13
 	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 
 
 
