@@ -86,7 +86,7 @@ void ResetFlag(void);
 
 HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if(GPIO_Pin == BUTTON_EXTI13_Pin) {
-//		count++;
+		//		count++;
 		//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
 		//printf("\t normal mode operation in progress. \n");
 		if (count == 1 && mode == INTENSIVE) {
@@ -104,20 +104,20 @@ HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 				ResetFlag();
 			}
 		}
-//		if (count == 3 && mode == INTENSIVE) {
-//			tickstart2 = HAL_GetTick();
-//			count = 1;
-//			sprintf(message_print,"coount is %d \n", count);
-//						HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
-//			tickstart3 = (tickstart2 - tickstart);
-//
-//			//	printf("The value of the third ticker is %d\n\n\n",tickstart3);
-//		}
+		//		if (count == 3 && mode == INTENSIVE) {
+		//			tickstart2 = HAL_GetTick();
+		//			count = 1;
+		//			sprintf(message_print,"coount is %d \n", count);
+		//						HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+		//			tickstart3 = (tickstart2 - tickstart);
+		//
+		//			//	printf("The value of the third ticker is %d\n\n\n",tickstart3);
+		//		}
 
 		else {
 			mode = INTENSIVE;
 			sprintf(message_print, "Entering Intensive Mode.\r\n");
-							HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+			HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
 			count = 1;
 			ResetFlag();
 		}
@@ -198,22 +198,22 @@ int main(void) {
 
 			if (accel_data[0] > ACC_THRESHOLD || accel_data[1] > ACC_THRESHOLD
 					|| accel_data[2] > ACC_THRESHOLD) {
-					mode = INTENSIVE;
-			//	int mytime;
+				mode = INTENSIVE;
+				//	int mytime;
 				sprintf(message_print, "\r\nFall is detected\r\n");
 				HAL_UART_Transmit(&huart1, (uint8_t*) message_print,
 						strlen(message_print), 0xFFFF);
 
-			//	mytime = HAL_GetTick();
+				//	mytime = HAL_GetTick();
 				//				printf("\n\n\nticker is %d",mytime);
 				if (HAL_GetTick() % 100 < 50) {
 					HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
 				} //insert 5Hz code here
 
 			}
-//			else {
-//				//				printf("Accel X : %f; Accel Y : %f; Accel Z : %f\n\n\n", accel_data[0], accel_data[1], accel_data[2]);
-//			}
+			//			else {
+			//				//				printf("Accel X : %f; Accel Y : %f; Accel Z : %f\n\n\n", accel_data[0], accel_data[1], accel_data[2]);
+			//			}
 
 			//if person is having acute respitory needs
 
@@ -283,187 +283,215 @@ int main(void) {
 					Mag_Baseline[1] = magneto_data[1];
 					Mag_Baseline[2] = magneto_data[2];
 				}
-				for (int i = 0; i < 3; i++)
-					Mag_Difference[i] = fabs(Mag_Baseline[i]-magneto_data[i]);
 
-				pressure_data = BSP_PSENSOR_ReadPressure()*100.0f;	//pressure in pascal
-				if(Mag_Difference[0] >= MAG_THRESHOLD || Mag_Difference[1] >= MAG_THRESHOLD || Mag_Difference[2] >= MAG_THRESHOLD){
-					magflag = WARNING;
-					sprintf(message_print, "\r\nCheck patient's abnormal orientation!\r\n");
-					HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
-					if (HAL_GetTick() % 200 < 50) {
-										HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
-									}
+					int countBluff = 0;
+					if (HAL_GetTick() % 10000 <50) {
+						sprintf(message_print, "%03d TEMP_%0.2f ACC %0.2f %0.2f %0.2f\r\n",countBluff, temp_data, accel_data[0], accel_data[1], accel_data[2]);
+						HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+						sprintf(message_print, "%03d GYRO %0.1f MAGNETO %0.2f %0.2f %0.2f\r\n", count/40, gyro_total, magneto_data[0], magneto_data[1], magneto_data[2]);
+						HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+						sprintf(message_print, "%03d HUMIDITY %0.2f and BARO %0.2f\r\n",count/40,  humidity_data, pressure_data);
+						HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+						countBluff++;
+
+
+
+
+						for (int i = 0; i < 3; i++)
+											Mag_Difference[i] = fabs(Mag_Baseline[i]-magneto_data[i]);
+
+										pressure_data = BSP_PSENSOR_ReadPressure()*100.0f;	//pressure in pascal
+										if(Mag_Difference[0] >= MAG_THRESHOLD || Mag_Difference[1] >= MAG_THRESHOLD || Mag_Difference[2] >= MAG_THRESHOLD){
+											magflag = WARNING;
+											sprintf(message_print, "\r\nCheck patient's abnormal orientation!\r\n");
+											HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+											if (HAL_GetTick() % 200 < 50) {
+												HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+											}
+										}
+										if (temp_data >= TEMP_THRESHOLD){
+											tempflag = WARNING;
+											sprintf(message_print, "\r\nFever is detected!\r\n");
+											HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+										}
+										if (humidity_data <= HUM_THRESHOLD){
+											humidflag = WARNING;
+											sprintf(message_print, "\r\nCheck patient's breath!\r\n");
+											HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+										}
+										if (accel_data[0] > ACC_THRESHOLD || accel_data[1] > ACC_THRESHOLD
+												|| accel_data[2] > ACC_THRESHOLD) {
+											mode = INTENSIVE;
+											//	int mytime;
+											sprintf(message_print, "\r\nFall is detected\r\n");
+											HAL_UART_Transmit(&huart1, (uint8_t*) message_print,
+													strlen(message_print), 0xFFFF);
+											if (gyro_total <= GYRO_THRESHOLD){
+												gyroflag = WARNING;
+												sprintf(message_print, "Patient in pain!\r\n");
+												HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+											}
+
+
+
+
+					}
+					//pressure
+					//
+					//				}
+
 				}
-				if (temp_data >= TEMP_THRESHOLD){
-					tempflag = WARNING;
-					sprintf(message_print, "\r\nFever is detected!\r\n");
-					HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
-				}
-				if (humidity_data <= HUM_THRESHOLD){
-					humidflag = WARNING;
-					sprintf(message_print, "\r\nCheck patient's breath!\r\n");
-					HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
-				}
-//				if (HAL_GetTick() % 1000 <50) {
-//					sprintf(message_print, "TEMP %0.2f ACC %0.2f %0.2f %0.2f\r\n", temp_data, magneto_data[0], accel_data[1], accel_data[2]);
-//							HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
-//
-//									//pressure
-//
-//				}
+
+				//pressure sensor here
 
 			}
-
-			//pressure sensor here
-
 		}
 	}
 }
 
-//		if(mode == HEALTHY ){
-//			//BSP_TSENSOR_Init();
-//
-//			//Acceleration is located below this line
-//			float accel_data[3];
-//			int16_t accel_data_i16[3] = { 0 };			// array to store the x, y and z readings.
-//			BSP_ACCELERO_AccGetXYZ(accel_data_i16);
-//			accel_data[0] = (float)accel_data_i16[0] / 100.0f;
-//			accel_data[1] = (float)accel_data_i16[1] / 100.0f;
-//			accel_data[2] = (float)accel_data_i16[2] / 100.0f;
-//			//////Acceleration Declaration End/////
-//
-//
-//
-////Declaration of the temperature and other variables which are
-//			float temp_data;// read temp
-//			float humidity_data;
-//			float pressure_data;
-//
-////Magnetometer and the current details for the items would be declared below this line
-//			float magnetometer_data[3];
-//			int16_t magneto_int16[3] = { 0 };
-//			BSP_MAGNETO_GetXYZ(magneto_int16);
-//			magnetometer_data[0] = (float)magneto_int16[0] / 100.0f;
-//			magnetometer_data[1] = (float)magneto_int16[1] / 100.0f;
-//			magnetometer_data[2] = (float)magneto_int16[2] / 100.0f;
-//
-//
-//			//gyroscope data is located below this line
-//			float gysoscope_data[3];
-//			int16_t gyro_int16[3] = { 0 };
-//		    BSP_GYRO_GetXYZ(gyro_int16);
-//			gysoscope_data[0] = (float)gyro_int16[0] / 100.0f;
-//			gysoscope_data[1] = (float)gyro_int16[1] / 100.0f;
-//			gysoscope_data[2] = (float)gyro_int16[2] / 100.0f;
-//
-//
-//			temp_data = BSP_TSENSOR_ReadTemp();
-//			humidity_data = BSP_HSENSOR_ReadHumidity();
-//			pressure_data = BSP_PSENSOR_ReadPressure()*100.0f; //pressure in pascal
-//		//	printf("Temperature data is %f\n", temp_data);
-//			printf("Humidity data is %f\n", humidity_data);
-////			printf("Pressure data is %f\n", pressure_data);
-//		//	doIHaveFever(temp_data);
-//		//	Respiratory(humidity_data, pressure_data);
-//		// the function above returns 16 bit integers which are 100 * acceleration_in_m/s2. Converting to float to print the actual acceleration.
-//
-//			printf("Accel X : %f; Accel Y : %f; Accel Z : %f; Temperature : %f\n\n\n", accel_data[0], accel_data[1], accel_data[2], temp_data);
-//			printf("Gyro X : %f; Gyro Y : %f; Gyro Z : %f; Pressure : %f\n", gysoscope_data[0], gysoscope_data[1], gysoscope_data[2], pressure_data);
-//			printf("Magnetometer1 X : %f; Magnetometer2 Y : %f; Magnetometer3 Z : %f; Humidity : %f\n", magnetometer_data[0], magnetometer_data[1], magnetometer_data[2], humidity_data);
-//			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
-//
-//
-//			if(temp_data > TEMP_THRESHOLD){
-//				tempflag = WARNING;
-//				mode = INTENSIVE;
-//
-//			}
-//
+	//		if(mode == HEALTHY ){
+	//			//BSP_TSENSOR_Init();
+	//
+	//			//Acceleration is located below this line
+	//			float accel_data[3];
+	//			int16_t accel_data_i16[3] = { 0 };			// array to store the x, y and z readings.
+	//			BSP_ACCELERO_AccGetXYZ(accel_data_i16);
+	//			accel_data[0] = (float)accel_data_i16[0] / 100.0f;
+	//			accel_data[1] = (float)accel_data_i16[1] / 100.0f;
+	//			accel_data[2] = (float)accel_data_i16[2] / 100.0f;
+	//			//////Acceleration Declaration End/////
+	//
+	//
+	//
+	////Declaration of the temperature and other variables which are
+	//			float temp_data;// read temp
+	//			float humidity_data;
+	//			float pressure_data;
+	//
+	////Magnetometer and the current details for the items would be declared below this line
+	//			float magnetometer_data[3];
+	//			int16_t magneto_int16[3] = { 0 };
+	//			BSP_MAGNETO_GetXYZ(magneto_int16);
+	//			magnetometer_data[0] = (float)magneto_int16[0] / 100.0f;
+	//			magnetometer_data[1] = (float)magneto_int16[1] / 100.0f;
+	//			magnetometer_data[2] = (float)magneto_int16[2] / 100.0f;
+	//
+	//
+	//			//gyroscope data is located below this line
+	//			float gysoscope_data[3];
+	//			int16_t gyro_int16[3] = { 0 };
+	//		    BSP_GYRO_GetXYZ(gyro_int16);
+	//			gysoscope_data[0] = (float)gyro_int16[0] / 100.0f;
+	//			gysoscope_data[1] = (float)gyro_int16[1] / 100.0f;
+	//			gysoscope_data[2] = (float)gyro_int16[2] / 100.0f;
+	//
+	//
+	//			temp_data = BSP_TSENSOR_ReadTemp();
+	//			humidity_data = BSP_HSENSOR_ReadHumidity();
+	//			pressure_data = BSP_PSENSOR_ReadPressure()*100.0f; //pressure in pascal
+	//		//	printf("Temperature data is %f\n", temp_data);
+	//			printf("Humidity data is %f\n", humidity_data);
+	////			printf("Pressure data is %f\n", pressure_data);
+	//		//	doIHaveFever(temp_data);
+	//		//	Respiratory(humidity_data, pressure_data);
+	//		// the function above returns 16 bit integers which are 100 * acceleration_in_m/s2. Converting to float to print the actual acceleration.
+	//
+	//			printf("Accel X : %f; Accel Y : %f; Accel Z : %f; Temperature : %f\n\n\n", accel_data[0], accel_data[1], accel_data[2], temp_data);
+	//			printf("Gyro X : %f; Gyro Y : %f; Gyro Z : %f; Pressure : %f\n", gysoscope_data[0], gysoscope_data[1], gysoscope_data[2], pressure_data);
+	//			printf("Magnetometer1 X : %f; Magnetometer2 Y : %f; Magnetometer3 Z : %f; Humidity : %f\n", magnetometer_data[0], magnetometer_data[1], magnetometer_data[2], humidity_data);
+	//			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+	//
+	//
+	//			if(temp_data > TEMP_THRESHOLD){
+	//				tempflag = WARNING;
+	//				mode = INTENSIVE;
+	//
+	//			}
+	//
 
-//
-//
-//
-//
-//		}
-//	}
+	//
+	//
+	//
+	//
+	//		}
+	//	}
 
-static void MX_GPIO_Init(void) {
-	/* GPIO Ports Clock Enable */
+	static void MX_GPIO_Init(void) {
+		/* GPIO Ports Clock Enable */
 
-	__HAL_RCC_GPIOB_CLK_ENABLE();	// Enable AHB2 Bus for GPIOB
-	__HAL_RCC_GPIOC_CLK_ENABLE();	// Enable AHB2 Bus for GPIOC
-	__HAL_RCC_GPIOD_CLK_ENABLE();// Enable Temperature and pressure sensor GPIOD
+		__HAL_RCC_GPIOB_CLK_ENABLE();	// Enable AHB2 Bus for GPIOB
+		__HAL_RCC_GPIOC_CLK_ENABLE();	// Enable AHB2 Bus for GPIOC
+		__HAL_RCC_GPIOD_CLK_ENABLE();// Enable Temperature and pressure sensor GPIOD
 
-	//HAL_GPIO_WritePin(GPIOB, LED2_Pin, GPIO_PIN_RESET); // Reset the LED2_Pin as 0
+		//HAL_GPIO_WritePin(GPIOB, LED2_Pin, GPIO_PIN_RESET); // Reset the LED2_Pin as 0
 
-	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+		GPIO_InitTypeDef GPIO_InitStruct = { 0 };
 
-	// Configuration of LED2_Pin (GPIO-B Pin-14) as GPIO output
-	GPIO_InitStruct.Pin = LED2_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+		// Configuration of LED2_Pin (GPIO-B Pin-14) as GPIO output
+		GPIO_InitStruct.Pin = LED2_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-	// Configuration of BUTTON_EXTI13_Pin (GPIO-C Pin-13) as AF,
-	GPIO_InitStruct.Pin = BUTTON_EXTI13_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+		// Configuration of BUTTON_EXTI13_Pin (GPIO-C Pin-13) as AF,
+		GPIO_InitStruct.Pin = BUTTON_EXTI13_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
 		// Configuration of LPS22HB_Pin (GPIO-D Pin-10) as GPIO output
-//	 GPIO_InitStruct.Pin = LPS22HB_INT_DRDY_EXTI0_Pin;
-//	 GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-//	 GPIO_InitStruct.Pull = GPIO_NOPULL;
-//	 GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-//	 HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+		//	 GPIO_InitStruct.Pin = LPS22HB_INT_DRDY_EXTI0_Pin;
+		//	 GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+		//	 GPIO_InitStruct.Pull = GPIO_NOPULL;
+		//	 GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		//	 HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-	 // Enable NVIC EXTI line 13
-	 HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-
-
+		// Enable NVIC EXTI line 13
+		HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 
 
-	 /*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOB, LED2_Pin, GPIO_PIN_RESET);
 
-}
-void ResetFlag(void){
-	accflag = SAFE;
-	gyroflag = SAFE;
-	pressureflag = SAFE;
-	tempflag = SAFE;
-	magflag = SAFE;
-	humidflag = SAFE;
-}
 
-static void UART1_Init(void) {
-	/* Pin configuration for UART. BSP_COM_Init() can do this automatically */
-	__HAL_RCC_GPIOB_CLK_ENABLE();
-	GPIO_InitTypeDef GPIO_InitStruct = { 0 };
-	GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
-	GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_6;
-	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+		/*Configure GPIO pin Output Level */
+		HAL_GPIO_WritePin(GPIOB, LED2_Pin, GPIO_PIN_RESET);
 
-	/* Configuring UART1 */
-	huart1.Instance = USART1;
-	huart1.Init.BaudRate = 115200;
-	huart1.Init.WordLength = UART_WORDLENGTH_8B;
-	huart1.Init.StopBits = UART_STOPBITS_1;
-	huart1.Init.Parity = UART_PARITY_NONE;
-	huart1.Init.Mode = UART_MODE_TX_RX;
-	huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-	huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-	huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-	if (HAL_UART_Init(&huart1) != HAL_OK) {
-		while (1)
-			;
+	}
+	void ResetFlag(void){
+		accflag = SAFE;
+		gyroflag = SAFE;
+		pressureflag = SAFE;
+		tempflag = SAFE;
+		magflag = SAFE;
+		humidflag = SAFE;
 	}
 
-}
+	static void UART1_Init(void) {
+		/* Pin configuration for UART. BSP_COM_Init() can do this automatically */
+		__HAL_RCC_GPIOB_CLK_ENABLE();
+		GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+		GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
+		GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_6;
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+		/* Configuring UART1 */
+		huart1.Instance = USART1;
+		huart1.Init.BaudRate = 115200;
+		huart1.Init.WordLength = UART_WORDLENGTH_8B;
+		huart1.Init.StopBits = UART_STOPBITS_1;
+		huart1.Init.Parity = UART_PARITY_NONE;
+		huart1.Init.Mode = UART_MODE_TX_RX;
+		huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+		huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+		huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+		huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+		if (HAL_UART_Init(&huart1) != HAL_OK) {
+			while (1)
+				;
+		}
+
+	}
