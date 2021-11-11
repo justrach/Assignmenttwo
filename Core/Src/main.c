@@ -36,8 +36,8 @@
 #define WIFI_WRITE_TIMEOUT 10000
 //#define USING_IOT_SERVER // This line should be commented out if using Packet Sender (not IoT server connection)
 
-const char* WiFi_SSID = " ";               // Replacce mySSID with WiFi SSID for your router / Hotspot
-const char* WiFi_password = "shenhern";   // Replace myPassword with WiFi password for your router / Hotspot
+const char* WiFi_SSID = "seth";               // Replacce mySSID with WiFi SSID for your router / Hotspot
+const char* WiFi_password = "nmoc1234";   // Replace myPassword with WiFi password for your router / Hotspot
 const WIFI_Ecn_t WiFi_security = WIFI_ECN_WPA2_PSK; // WiFi security your router / Hotspot. No need to change it unless you use something other than WPA2 PSK
 const uint16_t SOURCE_PORT = 1234;  // source port, which can be almost any 16 bit number
 
@@ -46,8 +46,8 @@ uint8_t ipaddr[4] = {192, 168, 43, 182}; // IP address of your laptop wireless l
                                             //(it should still be filled in with numbers 0-255 to avoid compilation errors)
 
 #ifdef USING_IOT_SERVER
-    const char* SERVER_NAME = "demo.thingsboard.io";    // domain name of the IoT server used
-    const uint16_t DEST_PORT = 80;          // 'server' port number. Change according to application layer protocol. 80 is the destination port for HTTP protocol.
+    const char* SERVER_NAME = "rach.codes/api/notes";    // domain name of the IoT server used
+    const uint16_t DEST_PORT = 80;          // 'server' port number. Change according to application layer protocol. 80 is the destination port for  protocol.
 #else
     const uint16_t DEST_PORT = 2028;        // 'server' port number - this is the port Packet Sender listens to (as you set in Packer Sender)
                                                 // and should be allowed by the OS firewall
@@ -60,7 +60,7 @@ static void MX_GPIO_Init(void);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 void accelero_interrupt_config(void);
 void delay(uint32_t time);
-volatile extern int delaytime, button_timer; //variable for delay func
+//volatile extern int delaytime, button_timer; //variable for delay func
 void pressure_interrupt_config(void);
 void mode_switch(void);
 static void UART1_Init(void);
@@ -73,9 +73,17 @@ volatile short int accflag, gyroflag, pressureflag, tempflag, magflag, humidflag
 UART_HandleTypeDef huart1;// struct for uart1
 char message_print[50]; //array for uart transmission
 
+
+
+
+
 int main(void)
 {
-	int startcount, endcount, difference;
+
+
+
+	//////OUR OG INTERPRETATION HERE
+//	int startcount, endcount, difference;
 	int intensive_state, timer_10s, count_healthy, timer_healthy_10s;
 	float Mag_Baseline[3], Mag_Difference[3];
 	float accel_data[3], gyro_data[3], magneto_data[3];
@@ -145,7 +153,7 @@ int main(void)
 
 		//intensive mode functions
 		if (mode == INTENSIVE){
-			startcount = HAL_GetTick();
+//			startcount = HAL_GetTick();
 
 			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
 
@@ -240,10 +248,10 @@ int main(void)
 					HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
 				}
 			}
-			endcount = HAL_GetTick();
+//			endcount = HAL_GetTick();
 
-			difference = endcount - startcount;
-			delay(250 - difference);
+//			difference = endcount - startcount;
+//			delay(250 - difference);
 			count++;
 		}
 		if (mode == HEALTHY){
@@ -276,7 +284,7 @@ int main(void)
 			}
 
 			count_healthy ++;
-			delay(250);
+//			delay(250);
 		}
 	}
 }
@@ -323,9 +331,65 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOD, &GPIO_lps22hb);
 }
 
+
+int counter = 0;
+	uint32_t tick1;
+	uint32_t tick2;
+
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+
+
+
 	if (GPIO_Pin == BUTTON_EXTI13_Pin){
-		mode_switch();
+//		mode_switch();
+
+//		if (button_timer >= 500){
+//				button_count = 0;
+//				button_timer = 0;
+//			}
+//
+//			button_count++;
+//
+//		int counter,timer;
+//		uint32_t tick1;
+//		uint32_t tick2;
+//
+
+
+			if (counter == 0 && mode == INTENSIVE){
+				tick1 = HAL_GetTick();
+				counter++;
+			}
+
+			if (counter == 1 && mode == INTENSIVE){
+				tick2 = HAL_GetTick();
+				if(((tick2-tick1))<500){
+				mode = HEALTHY;
+				counter = 0;
+				sprintf(message_print, "Switched to healthy mode\r\n");
+				HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+				HAL_GPIO_WritePin(GPIOB, LED2_Pin, GPIO_PIN_RESET);
+				FlagsToZero();
+				}
+				else{
+					mode = INTENSIVE;
+
+									counter = 0;
+									sprintf(message_print, "Switched to intensive mode\r\n");
+									HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+									FlagsToZero();
+				}
+			}
+
+//			if (button_count == 2){
+//				mode = INTENSIVE;
+//				button_count = 0;
+//				count = 0;
+//				sprintf(message_print, "Switched to intensive mode\r\n");
+//				HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+//				FlagsToZero();
+//			}
 	}
 
 	if (GPIO_Pin == LSM6DSL_INT1_EXTI11_Pin){
@@ -373,16 +437,11 @@ void accelero_interrupt_config(void){
 
 /** Delay function
  *  param: time = time in milliseconds**/
-void delay(uint32_t time){
-	delaytime = time;
-	while (delaytime != 0){
-	}
-}
-
-
-
-
-
+//void delay(uint32_t time){
+//	delaytime = time;
+//	while (delaytime != 0){
+//	}
+//}
 
 /** Configure interrupt for pressure sensor **/
 void pressure_interrupt_config(void){
@@ -401,37 +460,47 @@ void pressure_interrupt_config(void){
 }
 
 /** Switch function for USER PUSH BUTTON **/
-void mode_switch(void){
-	//timeout function of 1s
-	if (button_timer >= 1000){
-		button_count = 0;
-		button_timer = 0;
-	}
-
-	button_count++;
-
-	if (button_count == 1 && mode != INTENSIVE){
-		button_timer = 0;
-	}
-
-	if (button_count == 1 && mode == INTENSIVE){
-		mode = HEALTHY;
-		button_count = 0;
-		sprintf(message_print, "Switched to healthy mode\r\n");
-		HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
-		HAL_GPIO_WritePin(GPIOB, LED2_Pin, GPIO_PIN_RESET);
-		FlagsToZero();
-	}
-
-	if (button_count == 2){
-		mode = INTENSIVE;
-		button_count = 0;
-		count = 0;
-		sprintf(message_print, "Switched to intensive mode\r\n");
-		HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
-		FlagsToZero();
-	}
-}
+//void mode_switch(void){
+//	//timeout function of 1s
+//
+//
+//
+//
+//
+//
+//
+////	int counter, ticker,timer;
+////	uint32_t clock1;
+////	uint32_t clock2;
+//	if (button_timer >= 1000){
+//		button_count = 0;
+//		button_timer = 0;
+//	}
+//
+//	button_count++;
+//
+//	if (button_count == 1 && mode != INTENSIVE){
+//		button_timer = 0;
+//	}
+//
+//	if (button_count == 1 && mode == INTENSIVE){
+//		mode = HEALTHY;
+//		button_count = 0;
+//		sprintf(message_print, "Switched to healthy mode\r\n");
+//		HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+//		HAL_GPIO_WritePin(GPIOB, LED2_Pin, GPIO_PIN_RESET);
+//		FlagsToZero();
+//	}
+//
+//	if (button_count == 2){
+//		mode = INTENSIVE;
+//		button_count = 0;
+//		count = 0;
+//		sprintf(message_print, "Switched to intensive mode\r\n");
+//		HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+//		FlagsToZero();
+//	}
+//}
 
 static void UART1_Init(void)
 {
