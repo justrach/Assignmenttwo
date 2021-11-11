@@ -26,6 +26,7 @@
 #include "../../Drivers/BSP/B-L475E-IOT01/stm32l475e_iot01_psensor.h"
 #include "stdio.h"
 #include "math.h"
+#include "wifi.h"
 static void MX_GPIO_Init(void);
 //extern void initialise_monitor_handles(void);
 void SystemClock_Config(void);
@@ -54,6 +55,39 @@ char message_print[50]; //array for uart transmission
 // Threshold end
 
 int mode = HEALTHY;
+//wifi definition
+
+#define MAX_LENGTH 400  // adjust it depending on the max size of the packet you expect to send or receive
+#define WIFI_READ_TIMEOUT 10000
+#define WIFI_WRITE_TIMEOUT 10000
+
+//wifi definiton end
+
+
+const char* WiFi_SSID = "seth";               // Replacce mySSID with WiFi SSID for your router / Hotspot
+const char* WiFi_password = "nmoc1234";   // Replace myPassword with WiFi password for your router / Hotspot
+const WIFI_Ecn_t WiFi_security = WIFI_ECN_WPA2_PSK; // WiFi security your router / Hotspot. No need to change it unless you use something other than WPA2 PSK
+const uint16_t SOURCE_PORT = 1234;  // source port, which can be almost any 16 bit number
+
+uint8_t ipaddr[4] = {192, 168, 43, 134}; // IP address of your laptop wireless lan adapter, which is the one you successfully used to test Packet Sender above.
+                                    // If using IoT platform, this will be overwritten by DNS lookup, so the values of x and y doesn't matter
+                                            //(it should still be filled in with numbers 0-255 to avoid compilation errors)
+
+#ifdef USING_IOT_SERVER
+    const char* SERVER_NAME = "192.168.43.134";    // domain name of the IoT server used
+    const uint16_t DEST_PORT = 3000;          // 'server' port number. Change according to application layer protocol. 80 is the destination port for  protocol.
+#else
+    const uint16_t DEST_PORT = 3000;        // 'server' port number - this is the port Packet Sender listens to (as you set in Packer Sender)
+                                                // and should be allowed by the OS firewall
+#endif
+SPI_HandleTypeDef hspi3;
+
+
+
+
+
+
+
 
 //int flag =1;
 int count = 1;
@@ -125,8 +159,14 @@ HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 
 	}
+	if (GPIO_Pin == GPIO_PIN_1){
+		SPI_WIFI_ISR();
+	}
 
 }
+
+
+
 
 /*float temperatureMeasure(){
  BSP_TSENSOR_Init();
@@ -135,6 +175,7 @@ HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
  */
 static void UART1_Init(void);
 int main(void) {
+	char wifi_message[50];
 	//	initialise_monitor_handles();
 	HAL_Init();
 	MX_GPIO_Init();
@@ -156,10 +197,30 @@ int main(void) {
 	float gyro_data_i16[3] = { 0 };	//array to store gyro ODR data
 	float gyro_total;
 	int16_t magneto_data_i16[3] = { 0 };
-	char wifi_message[6];
-
+	char json[100];
 
 	int countBluff = 0;
+
+	//WIFI initialisation
+		  uint8_t req[MAX_LENGTH];  // request packet
+		  uint8_t resp[MAX_LENGTH]; // response packet
+		  uint16_t Datalen;
+		  WIFI_Status_t WiFi_Stat; // WiFi status. Should remain WIFI_STATUS_OK if everything goes well
+
+		  WiFi_Stat = WIFI_Init();                      // if it gets stuck here, you likely did not include EXTI1_IRQHandler() in stm32l4xx_it.c as mentioned above
+		  WiFi_Stat &= WIFI_Connect(WiFi_SSID, WiFi_password, WiFi_security); // joining a WiFi network takes several seconds. Don't be too quick to judge that your program has 'hung' :)
+		  if(WiFi_Stat!=WIFI_STATUS_OK) while(1);                   // halt computations if a WiFi connection could not be established.
+
+		#ifdef USING_IOT_SERVER
+		  WiFi_Stat = WIFI_GetHostAddress(SERVER_NAME, ipaddr); // DNS lookup to find the ip address, if using a connection to an IoT server
+		#endif
+		   WiFi_Stat = WIFI_Ping(ipaddr, 3, 200);                 // Optional ping 3 times in 200 ms intervals
+		  WiFi_Stat = WIFI_OpenClientConnection(1, WIFI_TCP_PROTOCOL, "conn", ipaddr, DEST_PORT, SOURCE_PORT); // Make a TCP connection.
+		                                                                  // "conn" is just a name and serves no functional purpose
+
+//		  if(WiFi_Stat!=WIFI_STATUS_OK) while(1);                   // halt computations if a connection could not be established with the server
+
+
 	while (1) {
 		// this code here must be polled frequently @ 10 seconds
 		// Have to create timers which poll at different speeds and times. How do you do this?
@@ -183,6 +244,7 @@ int main(void) {
 				sprintf(message_print, "\r\nFever is detected\r\n");
 				HAL_UART_Transmit(&huart1, (uint8_t*) message_print,
 						strlen(message_print), 0xFFFF);
+//				WiFi_Stat = WIFI_SendData(1, wifi_message, (uint16_t)strlen((char*)wifi_message), &Datalen, WIFI_WRITE_TIMEOUT);
 
 				//				mode = INTENSIVE;//do not enter intensive, only thru respitory
 				if (HAL_GetTick() % 100 == 0) {
@@ -228,7 +290,14 @@ int main(void) {
 					HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
 				} //blink the LED 2 at 5Hz
 			} else {
-				//				printf("The humidity is %0.2f\n and the pressure data is %f", humidity_data, pressure_data);
+
+//				sprintf((char*)json,"{\"temperature\":%3d,\"accelerometer\":%f,%f,%f,\"pressure_sensor\":%f}",temp_data,accel_data[0],accel_data[1],accel_data[2],pressure_data);
+//				HAL_UART_Transmit(&huart1, (uint8_t*) message_print,
+//										strlen(message_print), 0xFFFF);
+//				sprintf((char*)req, "POST /api/notes/ HTTP/1.1\r\nHost: https://rach.codes\r\nContent-Length: %d\r\n\r\n%s",strlen(json),json);
+//				HAL_UART_Transmit(&huart1, (uint8_t*) message_print,
+//														strlen(message_print), 0xFFFF);//				printf("The humidity is %0.2f\n and the pressure data is %f", humidity_data, pressure_data);
+//				WiFi_Stat = WIFI_SendData(1, wifi_message, (uint16_t)strlen((char*)wifi_message), &Datalen, WIFI_WRITE_TIMEOUT);
 			}
 
 
@@ -499,4 +568,11 @@ int main(void) {
 				;
 		}
 
+	}
+
+
+
+	void SPI3_IRQHandler(void)
+	{
+	    HAL_SPI_IRQHandler(&hspi3);
 	}
