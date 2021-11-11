@@ -46,7 +46,7 @@ char message_print[50]; //array for uart transmission
 #define GYRO_THRESHOLD 200.0
 #define TEMP_THRESHOLD 37.6
 #define MAG_THRESHOLD 1
-#define HUM_THRESHOLD 99.0
+#define HUM_THRESHOLD 60.0
 #define ACC_THRESHOLD 13
 #define P_THRESHOLD 102020
 #define WARNING 1
@@ -114,7 +114,7 @@ HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		//			//	printf("The value of the third ticker is %d\n\n\n",tickstart3);
 		//		}
 
-		else {
+		else if(mode == INTENSIVE) {
 			mode = INTENSIVE;
 			sprintf(message_print, "Entering Intensive Mode.\r\n");
 			HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
@@ -159,7 +159,7 @@ int main(void) {
 	char wifi_message[6];
 
 
-
+	int countBluff = 0;
 	while (1) {
 		// this code here must be polled frequently @ 10 seconds
 		// Have to create timers which poll at different speeds and times. How do you do this?
@@ -190,15 +190,15 @@ int main(void) {
 				} //insert LED code here
 			} else {
 
-				sprintf(message_print,
-						"%03d TEMP %0.2f ACC %0.2f %0.2f %0.2f\r\n", count / 40,
-						temp_data, accel_data[0], accel_data[1], accel_data[2]);
-				HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
+//				sprintf(message_print,
+//						"%03d TEMP %0.2f ACC %0.2f %0.2f %0.2f\r\n", count / 40,
+//						temp_data, accel_data[0], accel_data[1], accel_data[2]);
+//				HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
 			}
 
 			if (accel_data[0] > ACC_THRESHOLD || accel_data[1] > ACC_THRESHOLD
 					|| accel_data[2] > ACC_THRESHOLD) {
-				mode = INTENSIVE;
+//				mode = INTENSIVE;
 				//	int mytime;
 				sprintf(message_print, "\r\nFall is detected\r\n");
 				HAL_UART_Transmit(&huart1, (uint8_t*) message_print,
@@ -219,7 +219,10 @@ int main(void) {
 
 			//humidity
 			if (humidity_data > HUM_THRESHOLD || pressure_data > P_THRESHOLD) {
-				//				printf("Check the patient's breath!!!\n\n the humidity is %0.2f! AND THE PRESSURE THAT HE IS EXHALING AT IS %f\n\n", humidity_data, pressure_data);
+				sprintf(message_print, "\r\nCheck patient's breath! \n");
+								HAL_UART_Transmit(&huart1, (uint8_t*) message_print,
+										strlen(message_print), 0xFFFF);
+
 				mode = INTENSIVE;
 				if (HAL_GetTick() % 200 < 50) {
 					HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
@@ -284,13 +287,15 @@ int main(void) {
 					Mag_Baseline[2] = magneto_data[2];
 				}
 
-					int countBluff = 0;
+
 					if (HAL_GetTick() % 10000 <50) {
 						sprintf(message_print, "%03d TEMP_%0.2f ACC %0.2f %0.2f %0.2f\r\n",countBluff, temp_data, accel_data[0], accel_data[1], accel_data[2]);
 						HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
-						sprintf(message_print, "%03d GYRO %0.1f MAGNETO %0.2f %0.2f %0.2f\r\n", count/40, gyro_total, magneto_data[0], magneto_data[1], magneto_data[2]);
+						countBluff++;
+						sprintf(message_print, "%03d GYRO %0.1f MAGNETO %0.2f %0.2f %0.2f\r\n", countBluff, gyro_total, magneto_data[0], magneto_data[1], magneto_data[2]);
 						HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
-						sprintf(message_print, "%03d HUMIDITY %0.2f and BARO %0.2f\r\n",count/40,  humidity_data, pressure_data);
+						countBluff++;
+						sprintf(message_print, "%03d HUMIDITY %0.2f and BARO %0.2f\r\n",countBluff,  humidity_data, pressure_data);
 						HAL_UART_Transmit(&huart1, (uint8_t*)message_print, strlen(message_print),0xFFFF);
 						countBluff++;
 
